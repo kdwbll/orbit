@@ -20,7 +20,7 @@ new_sqlite_classes = ["TunnelRelay"]
 
 # Optional: restrict which hosts may register (comma-separated hostIds).
 [vars]
-ALLOWED_HOST_IDS = "2ee425a0be360cf511bfdbdb6a948e88"
+ALLOWED_HOST_IDS = "481cc87851d49f80d1cd6da22374effc"
 ALLOWED_PHONE_IDS = "48d5d4e0e5a1eb3e1680d056af1b32fc"
 
 # Secrets (set with `npx wrangler secret put <NAME>`):

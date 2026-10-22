@@ -47,6 +47,21 @@ The iPhone App's chat page has a **「清除聊天记录」(Clear chat history)*
 
 Data is stored in `~/.opa/` by default. Set `OPA_HOME` and `OPA_PORT` to run an isolated instance.
 
+## Mac + Android setup (no iPhone required)
+
+The Host can be used directly from the Mac terminal: run `opa start` in one terminal and `opa chat` in another. The iOS app and Cloudflare Relay are optional when you are at home.
+
+For a dedicated Android phone that stays at home, Android 11+ **Wireless debugging** avoids any USB cable. Put the phone on power and the same Wi-Fi as the Mac, then in Developer options choose **Wireless debugging → Pair device with pairing code**. On the Mac run:
+
+```bash
+adb pair <phone-ip>:<pairing-port>          # enter the code shown on the phone
+adb connect <phone-ip>:<debug-port>
+opa config phone serial <phone-ip>:<debug-port>
+opa phone status
+```
+
+`opa config phone serial` saves the address in the Host database. It is restored when `opa start` is launched later (including by LaunchAgent); an explicit `OPA_PHONE_SERIAL` environment variable still overrides it for one-off use. Wi-Fi debugging may choose a new port after a reboot or network change; reconnect with `adb connect` and update the saved address if that happens.
+
 ## Prepare the Android phone
 
 V1 uses a dedicated Xiaomi Android phone (`23116PN5BC`, default serial `e7fe2f2a`). Prefer service MCPs or connected plugins for steps they can complete, then consider a feasible website; dispatch a phone worker only when the task requires a phone app or phone sign-in state. WeChat is unavailable on this dedicated phone, and the Mac WeChat app blocks computer use. When there is no other feasible route, the owner must complete the step in WeChat on their own phone.

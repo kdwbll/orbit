@@ -11,16 +11,23 @@ import { PhoneStatusProbe } from './phone/status.ts';
 import type { DeviceContext, ImportItem, Settings } from './types.ts';
 import { log } from './util/log.ts';
 
-export interface HostConfig { port: number; relayUrl?: string; bundleId: string }
+export interface HostConfig { port: number; relayUrl?: string; bundleId: string; phoneSerial: string }
 
 /** What `push.register` accepts as the app's own bundle id (it becomes the APNs topic). */
 const BUNDLE_ID_RE = /^[A-Za-z0-9.-]{1,155}$/;
 
 export function loadConfig(db: Db): HostConfig {
+  // A configured Wi-Fi ADB address must survive a restart (including a launchd
+  // restart). An explicitly supplied environment value always wins, which keeps
+  // one-off development and CI runs predictable.
+  const configuredPhone = db.get<string>('config.phoneSerial')?.trim();
+  const phoneSerial = process.env.OPA_PHONE_SERIAL?.trim() || configuredPhone || 'e7fe2f2a';
+  if (!process.env.OPA_PHONE_SERIAL?.trim() && configuredPhone) process.env.OPA_PHONE_SERIAL = configuredPhone;
   return {
     port: Number(process.env.OPA_PORT ?? db.get<number>('config.port') ?? 7420),
     relayUrl: process.env.OPA_RELAY_URL ?? db.get<string>('config.relayUrl') ?? undefined,
     bundleId: db.get<string>('config.bundleId') ?? 'com.haoyuanyu.orbit',
+    phoneSerial,
   };
 }
 

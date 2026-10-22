@@ -16,12 +16,15 @@ __pycache__/
 ios/build-*/
 ios/screenshots/
 
+# Android build output is reproducible and must not be committed.
+android/.gradle/
+android/app/build/
+
 # Secrets (APNs key etc.)
 *.p8
 
 # Not part of the public release: Muse/ADB-relay work in progress, archived experiments, personal dev log
 archive/
-android/
 kits/
 docs/handoff-adb-relay.md
 docs/design/adb-relay.md

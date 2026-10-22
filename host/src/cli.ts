@@ -5,12 +5,12 @@
 //   opa status | devices | unpair <deviceId>
 //   opa phone setup | status
 //   opa mcp list | status | init | enable <id> | disable <id> | import <json-path> | check <id...>
-//   opa config relay <wss://…> | port <n> | bundle-id <id> | phone-notify on|off
+//   opa config relay <wss://…> | port <n> | bundle-id <id> | phone serial <serial-or-ip:port> | phone-notify on|off
 //   opa install-skills        link skills/china-services and phone-automation into ~/.codex/skills
 import { createInterface } from 'node:readline/promises';
 import { existsSync, mkdirSync, symlinkSync, writeFileSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { stdin, stdout } from 'node:process';
 import { spawnSync } from 'node:child_process';
 import qrcode from 'qrcode-terminal';
@@ -207,6 +207,11 @@ function phoneSetup() {
 }
 
 function phoneStatus() {
+  // `opa phone status` runs without creating a Host, so load the persisted
+  // Wi-Fi ADB address here as well. The environment remains the higher-priority
+  // override for a temporary device selection.
+  const saved = new Db().get<string>('config.phoneSerial')?.trim();
+  if (!process.env.OPA_PHONE_SERIAL?.trim() && saved) process.env.OPA_PHONE_SERIAL = saved;
   const config = phoneConfigStatus();
   const serial = process.env.OPA_PHONE_SERIAL || DEFAULT_PHONE_SERIAL;
   console.log(`手机自动化配置：${JSON.stringify(config, null, 2)}`);
@@ -329,19 +334,33 @@ async function config() {
   if (k === 'relay') { db.set('config.relayUrl', v); console.log('relay =', v); }
   else if (k === 'port') { db.set('config.port', Number(v)); console.log('port =', v); }
   else if (k === 'bundle-id') { db.set('config.bundleId', v); console.log('bundleId =', v); }
+  else if (k === 'phone') {
+    const [subcommand, serial] = args.slice(1);
+    if (subcommand === 'serial' && serial && /^[A-Za-z0-9_.:-]{1,160}$/.test(serial)) {
+      db.set('config.phoneSerial', serial);
+      console.log(`phone serial = ${serial}`);
+    } else if (subcommand === 'serial') {
+      console.error('用法：opa config phone serial <设备序列号或无线 ADB 地址，例如 192.168.1.8:37123>');
+      process.exitCode = 2;
+    } else {
+      console.error('用法：opa config phone serial <设备序列号或无线 ADB 地址>');
+      process.exitCode = 2;
+    }
+  }
   else if (k === 'phone-notify') {
     // The running host re-reads this on every poll, so no restart is needed. OPA_PHONE_NOTIFY=0 also switches it off.
     if (v === 'on' || v === 'off') { db.set('config.phoneNotify', v === 'on'); console.log('phone-notify =', v); }
     else if (v === undefined) console.log('phone-notify =', db.get<boolean>('config.phoneNotify') === false ? 'off' : 'on');
     else { console.error('用法：opa config phone-notify on|off'); process.exitCode = 2; }
   }
-  else console.log('用法：opa config relay <wss://…> | port <n> | bundle-id <id> | phone-notify on|off');
+  else console.log('用法：opa config relay <wss://…> | port <n> | bundle-id <id> | phone serial <serial-or-ip:port> | phone-notify on|off');
 }
 
 /** Write a LaunchAgent so the host starts at login and restarts on crash. */
 async function launchd() {
   const plist = join(homedir(), 'Library/LaunchAgents/com.openpersonalagent.host.plist');
   const bin = resolve(import.meta.dirname, '../bin/opa.mjs');
+  mkdirSync(dirname(plist), { recursive: true });
   writeFileSync(plist, `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
