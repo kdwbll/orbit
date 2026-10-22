@@ -6,6 +6,8 @@
 
 [English](README.md) | **简体中文**
 
+> Mac + 两台安卓手机、不用 iPhone 的当前使用步骤见：[中文使用说明](docs/mac-android-remote.zh-CN.md)。
+
 **住在你 Mac 上的私人管家：Codex 做大脑，专用安卓手机做手，iPhone 上和你说话。**
 
 <img src="https://img.shields.io/badge/status-experimental-orange" alt="experimental" />
